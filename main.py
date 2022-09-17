@@ -1,7 +1,5 @@
-import os
-import random
+import os, random, pathlib
 from pprint import pprint
-import pathlib
 
 import requests
 from pathlib import Path
@@ -10,14 +8,8 @@ from os.path import splitext
 from environs import Env
 
 
-env = Env()
-env.read_env()
-VK_CLIENT_ID = env.int('VK_CLIENT_ID')
-access_token = env.str('access_token')
-user_id = env.int('user_id')
+
 directory_path = 'files'
-path_photo = ''
-comment = ''
 
 
 def get_extension(img_url):
@@ -62,19 +54,13 @@ def safe_image(img_info):
     return path_photo
 
 
-def get_upload_server():
+def get_upload_server(params):
     vk_url = 'https://api.vk.com/method/photos.getWallUploadServer'
-    params = {
-        'album_id': -14,
-        'access_token': access_token,
-        'v': 5.131
-    }
     response = requests.get(vk_url, params)
-    pprint(response.json())
     vk_server_url = response.json().get('response').get('upload_url')
     return vk_server_url
 
-# vk_server_url = 'https://pu.vk.com/c521232/ss2215/upload.php?act=do_add&mid=11096823&aid=-14&gid=0&hash=be410b83cf82f998ce9ed20a17de251a&rhash=eb6d761db23268db167c1529a52a639f&swfupload=1&api=1&wallphoto=1'
+
 def upload_photos_to_server(vk_server_url, path_photo):
     with open(path_photo, 'rb') as file:
         files = {
@@ -83,63 +69,59 @@ def upload_photos_to_server(vk_server_url, path_photo):
         response = requests.post(vk_server_url, files=files)
         response.raise_for_status()
         server_response = response.json()
-        pprint(server_response)
-        print()
     return server_response
 
 
-def save_photo_to_album(server_response):
+def save_photo_to_album(server_response, params):
     hash = server_response.get('hash')
     photo = server_response.get('photo')
     server = server_response.get('server')
-    params = {
+    server_params = {
         'hash': hash,
         'photo': photo,
         'server': server,
+    }
+    params.update(server_params)
+    vk_url_upload = 'https://api.vk.com/method/photos.saveWallPhoto'
+    response_upload = requests.post(vk_url_upload, params=params)
+    response_upload.raise_for_status()
+    server_photo = response_upload.json()
+    return server_photo
+
+
+def post_img(server_photo, comment, params, group_id):
+    url_post = 'https://api.vk.com/method/wall.post'
+    photo_id = server_photo.get('response')[0].get('id')
+    owner_id = server_photo.get('response')[0].get('owner_id')
+    photo_params = {
+        'attachments': f'photo{owner_id}_{photo_id}',
+        'from_group': 215958081,
+        'message': comment,
+        'owner_id': group_id
+    }
+    photo_params.update(params)
+    response_upload = requests.post(url_post, params=photo_params)
+    response_upload.raise_for_status()
+
+
+def main():
+    env = Env()
+    env.read_env()
+    access_token = env.str('access_token')
+    group_id = env.int('group_id')
+    params = {
         'album_id': -14,
         'access_token': access_token,
         'v': 5.131
     }
-    vk_url_upload = 'https://api.vk.com/method/photos.saveWallPhoto'
-    response_upload = requests.post(vk_url_upload, params=params)
-    response_upload.raise_for_status()
-    x = response_upload.json()
-    pprint(response_upload.json())
-    print()
-    return x
-
-def post_img(x):
-    url_post = 'https://api.vk.com/method/wall.post'
-    owner_id = -215958081
-    photo_id = x.get('response')[0].get('id')
-    owner_id_ = x.get('response')[0].get('owner_id')
-    print('owner_id', owner_id)
-    print('id', photo_id)
-    p = {
-        'attachments': f'photo{owner_id_}_{photo_id}',
-        'album_id': -14,
-        'access_token': access_token,
-        'v': 5.131,
-        'from_group': 215958081,
-        'message': comment,
-        'owner_id': owner_id
-    }
-    response_upload = requests.post(url_post, params=p)
-    response_upload.raise_for_status()
-    print()
-    print('wall.post')
-    pprint(response_upload.json())
-    print()
-
-
-def main():
     comic_number = get_random_comic_number()
     img_info = fetch_img_url(comic_number)
     path_photo = safe_image(img_info)
-    vk_server_url = get_upload_server()
+    vk_server_url = get_upload_server(params)
     server_response = upload_photos_to_server(vk_server_url, path_photo)
-    x = save_photo_to_album(server_response)
-    post_img(x)
+    server_photo = save_photo_to_album(server_response, params)
+    comment = img_info.get('comment')
+    post_img(server_photo, comment, params, group_id)
     os.remove(path_photo)
     os.rmdir(directory_path)
 
