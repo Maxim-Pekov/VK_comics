@@ -1,15 +1,12 @@
-import os, random, pathlib
-from pprint import pprint
+import os, random, pathlib, requests
 
-import requests
 from pathlib import Path
 from urllib.parse import urlparse
 from os.path import splitext
 from environs import Env
 
 
-
-directory_path = 'files'
+DIRECTORY_PATH = 'files'
 
 
 def get_extension(img_url):
@@ -27,7 +24,7 @@ def get_random_comic_number():
     return random_comic_number
 
 
-def fetch_img_url(comic_number):
+def fetch_img_info(comic_number):
     url = f"https://xkcd.com/{comic_number}/info.0.json"
     response = requests.get(url)
     response.raise_for_status()
@@ -46,8 +43,8 @@ def safe_image(img_info):
     extension = get_extension(img_info.get('img_url'))
     comic_number = img_info.get('comic_number')
     name_photo = 'commics'
-    pathlib.Path(directory_path).mkdir(parents=True, exist_ok=True)
-    path_photo = Path() / directory_path / f'{name_photo}{comic_number}{extension}'
+    pathlib.Path(DIRECTORY_PATH).mkdir(parents=True, exist_ok=True)
+    path_photo = Path() / DIRECTORY_PATH / f'{name_photo}{comic_number}{extension}'
     img_content = response_img.content
     with open(path_photo, 'wb') as file:
         file.write(img_content)
@@ -95,7 +92,7 @@ def post_img(server_photo, comment, params, group_id):
     owner_id = server_photo.get('response')[0].get('owner_id')
     photo_params = {
         'attachments': f'photo{owner_id}_{photo_id}',
-        'from_group': 215958081,
+        'from_group': group_id,
         'message': comment,
         'owner_id': group_id
     }
@@ -107,15 +104,15 @@ def post_img(server_photo, comment, params, group_id):
 def main():
     env = Env()
     env.read_env()
-    access_token = env.str('access_token')
-    group_id = env.int('group_id')
+    access_token = env.str('ACCESS_VK_TOKEN')
+    group_id = env.int('GROUP_ID')
     params = {
         'album_id': -14,
         'access_token': access_token,
         'v': 5.131
     }
     comic_number = get_random_comic_number()
-    img_info = fetch_img_url(comic_number)
+    img_info = fetch_img_info(comic_number)
     path_photo = safe_image(img_info)
     vk_server_url = get_upload_server(params)
     server_response = upload_photos_to_server(vk_server_url, path_photo)
@@ -123,7 +120,7 @@ def main():
     comment = img_info.get('comment')
     post_img(server_photo, comment, params, group_id)
     os.remove(path_photo)
-    os.rmdir(directory_path)
+    os.rmdir(DIRECTORY_PATH)
 
 
 if __name__ == '__main__':
