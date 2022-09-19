@@ -58,7 +58,7 @@ def get_upload_server(params):
     return vk_server_url
 
 
-def upload_photos_to_server(vk_server_url, path_photo):
+def upload_comic_to_server(vk_server_url, path_photo):
     with open(path_photo, 'rb') as file:
         files = {
             'photo': file,
@@ -69,7 +69,7 @@ def upload_photos_to_server(vk_server_url, path_photo):
     return server_response
 
 
-def save_photo_to_album(server_response, params):
+def save_comic_to_album(server_response, params):
     hash = server_response.get('hash')
     photo = server_response.get('photo')
     server = server_response.get('server')
@@ -86,7 +86,7 @@ def save_photo_to_album(server_response, params):
     return server_photo
 
 
-def post_img(server_photo, comment, params, group_id):
+def post_comic(server_photo, comment, params, group_id):
     url_post = 'https://api.vk.com/method/wall.post'
     photo_id = server_photo.get('response')[0].get('id')
     owner_id = server_photo.get('response')[0].get('owner_id')
@@ -115,10 +115,10 @@ def main():
     img_info = fetch_img_info(comic_number)
     photo_path = save_image(img_info)
     vk_server_url = get_upload_server(params)
-    server_response = upload_photos_to_server(vk_server_url, photo_path)
-    server_photo = save_photo_to_album(server_response, params)
+    server_response = upload_comic_to_server(vk_server_url, photo_path)
+    server_photo = save_comic_to_album(server_response, params)
     comment = img_info.get('comment')
-    post_img(server_photo, comment, params, group_id)
+    post_comic(server_photo, comment, params, group_id)
     os.remove(photo_path)
     os.rmdir(DIRECTORY_PATH)
 
