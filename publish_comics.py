@@ -38,17 +38,17 @@ def fetch_img_info(comic_number):
     return img_info
 
 
-def safe_image(img_info):
+def save_image(img_info):
     response_img = requests.get(img_info.get('img_url'))
     extension = get_extension(img_info.get('img_url'))
     comic_number = img_info.get('comic_number')
-    name_photo = 'commics'
+    photo_name = 'commics'
     pathlib.Path(DIRECTORY_PATH).mkdir(parents=True, exist_ok=True)
-    path_photo = Path() / DIRECTORY_PATH / f'{name_photo}{comic_number}{extension}'
+    photo_path  = Path() / DIRECTORY_PATH / f'{photo_name}{comic_number}{extension}'
     img_content = response_img.content
-    with open(path_photo, 'wb') as file:
+    with open(photo_path , 'wb') as file:
         file.write(img_content)
-    return path_photo
+    return photo_path
 
 
 def get_upload_server(params):
@@ -80,9 +80,9 @@ def save_photo_to_album(server_response, params):
     }
     params.update(server_params)
     vk_url_upload = 'https://api.vk.com/method/photos.saveWallPhoto'
-    response_upload = requests.post(vk_url_upload, params=params)
-    response_upload.raise_for_status()
-    server_photo = response_upload.json()
+    upload_response = requests.post(vk_url_upload, params=params)
+    upload_response.raise_for_status()
+    server_photo = upload_response.json()
     return server_photo
 
 
@@ -97,14 +97,14 @@ def post_img(server_photo, comment, params, group_id):
         'owner_id': group_id
     }
     photo_params.update(params)
-    response_upload = requests.post(url_post, params=photo_params)
-    response_upload.raise_for_status()
+    upload_response = requests.post(url_post, params=photo_params)
+    upload_response.raise_for_status()
 
 
 def main():
     env = Env()
     env.read_env()
-    access_token = env.str('ACCESS_VK_TOKEN')
+    access_token = env.str('VK_ACCESS_TOKEN')
     group_id = -env.int('GROUP_ID')
     params = {
         'album_id': -14,
@@ -113,13 +113,13 @@ def main():
     }
     comic_number = get_random_comic_number()
     img_info = fetch_img_info(comic_number)
-    path_photo = safe_image(img_info)
+    photo_path = safe_image(img_info)
     vk_server_url = get_upload_server(params)
-    server_response = upload_photos_to_server(vk_server_url, path_photo)
+    server_response = upload_photos_to_server(vk_server_url, photo_path)
     server_photo = save_photo_to_album(server_response, params)
     comment = img_info.get('comment')
     post_img(server_photo, comment, params, group_id)
-    os.remove(path_photo)
+    os.remove(photo_path)
     os.rmdir(DIRECTORY_PATH)
 
 
