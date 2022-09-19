@@ -105,7 +105,7 @@ def main():
     env = Env()
     env.read_env()
     access_token = env.str('ACCESS_VK_TOKEN')
-    group_id = env.int('GROUP_ID')
+    group_id = -env.int('GROUP_ID')
     params = {
         'album_id': -14,
         'access_token': access_token,

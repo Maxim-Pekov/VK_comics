@@ -28,8 +28,8 @@ pip install -r requirements.txt
 5. Create `.env` directory
 6. In the directory `.env` write the following lines:
 ```python
-ACCESS_VK_TOKEN = Your_vk_token
-GROUP_ID = -Your_group_id
+ACCESS_VK_TOKEN=Your_vk_token
+GROUP_ID=Your_group_id
 ```
 ---
 ## About me
