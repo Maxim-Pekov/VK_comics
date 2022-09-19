@@ -113,7 +113,7 @@ def main():
     }
     comic_number = get_random_comic_number()
     img_info = fetch_img_info(comic_number)
-    photo_path = safe_image(img_info)
+    photo_path = save_image(img_info)
     vk_server_url = get_upload_server(params)
     server_response = upload_photos_to_server(vk_server_url, photo_path)
     server_photo = save_photo_to_album(server_response, params)
