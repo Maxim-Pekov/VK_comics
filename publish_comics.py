@@ -70,11 +70,11 @@ def upload_comic_to_server(vk_server_url, path_photo):
 
 
 def save_comic_to_album(server_response, params):
-    hash = server_response.get('hash')
+    hash_number = server_response.get('hash')
     photo = server_response.get('photo')
     server = server_response.get('server')
     server_params = {
-        'hash': hash,
+        'hash': hash_number,
         'photo': photo,
         'server': server,
     }
