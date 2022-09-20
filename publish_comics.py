@@ -10,6 +10,7 @@ COMIC_DIRECTORY_PATH = 'files'
 def get_random_comic_number():
     url = "https://xkcd.com/info.0.json"
     response = requests.get(url)
+    response.raise_for_status()
     last_comic_number = response.json().get('num')
     random_comic_number = random.randint(1, last_comic_number)
     return random_comic_number
@@ -51,12 +52,10 @@ def get_upload_server(params):
 
 def upload_comic_to_server(vk_server_url, path_photo):
     with open(path_photo, 'rb') as file:
-        files = {
-            'photo': file,
-        }
+        files = {'photo': file}
         response = requests.post(vk_server_url, files=files)
-        response.raise_for_status()
-        server_response = response.json()
+    response.raise_for_status()
+    server_response = response.json()
     return server_response
 
 
