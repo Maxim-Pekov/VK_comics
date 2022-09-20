@@ -1,19 +1,10 @@
 import os, random, pathlib, requests
 
 from pathlib import Path
-from urllib.parse import urlparse
-from os.path import splitext
 from environs import Env
 
 
-DIRECTORY_PATH = 'files'
-
-
-def get_extension(img_url):
-    parse_result = urlparse(img_url)
-    url_path = parse_result.path
-    only_path, extension = splitext(url_path)
-    return extension
+COMIC_DIRECTORY_PATH = 'files'
 
 
 def get_random_comic_number():
@@ -40,13 +31,12 @@ def fetch_img_info(comic_number):
 
 def save_image(img_info):
     response_img = requests.get(img_info.get('img_url'))
-    extension = get_extension(img_info.get('img_url'))
-    comic_number = img_info.get('comic_number')
-    photo_name = 'commics'
-    pathlib.Path(DIRECTORY_PATH).mkdir(parents=True, exist_ok=True)
-    photo_path  = Path() / DIRECTORY_PATH / f'{photo_name}{comic_number}{extension}'
+    img_url = img_info.get('img_url')
+    comic_name = os.path.basename(img_url)
+    pathlib.Path(COMIC_DIRECTORY_PATH).mkdir(parents=True, exist_ok=True)
+    photo_path = Path() / COMIC_DIRECTORY_PATH / comic_name
     img_content = response_img.content
-    with open(photo_path , 'wb') as file:
+    with open(photo_path, 'wb') as file:
         file.write(img_content)
     return photo_path
 
@@ -120,7 +110,7 @@ def main():
     comment = img_info.get('comment')
     post_comic(server_photo, comment, params, group_id)
     os.remove(photo_path)
-    os.rmdir(DIRECTORY_PATH)
+    os.rmdir(COMIC_DIRECTORY_PATH)
 
 
 if __name__ == '__main__':
