@@ -19,9 +19,10 @@ def fetch_img_info(comic_number):
     url = f"https://xkcd.com/{comic_number}/info.0.json"
     response = requests.get(url)
     response.raise_for_status()
-    img_url = response.json().get('img')
-    comment = response.json().get('alt')
-    comic_number = response.json().get('num')
+    json_response = response.json()
+    img_url = json_response.get('img')
+    comment = json_response.get('alt')
+    comic_number = json_response.get('num')
     img_info = {}
     img_info['img_url'] = img_url
     img_info['comment'] = comment
