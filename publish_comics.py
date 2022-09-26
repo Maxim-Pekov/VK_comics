@@ -1,10 +1,7 @@
-import os, random, pathlib, requests
+import os, random, requests
 
 from pathlib import Path
 from environs import Env
-
-
-COMIC_DIRECTORY_PATH = 'files'
 
 
 def get_random_comic_number():
@@ -23,20 +20,14 @@ def fetch_img_info(comic_number):
     json_response = response.json()
     img_url = json_response.get('img')
     comment = json_response.get('alt')
-    comic_number = json_response.get('num')
-    img_info = {}
-    img_info['img_url'] = img_url
-    img_info['comment'] = comment
-    img_info['commic_number'] = comic_number
-    return img_info
+    return img_url, comment
 
 
 def save_image(img_info):
-    response_img = requests.get(img_info.get('img_url'))
-    img_url = img_info.get('img_url')
+    response_img = requests.get(img_info[0])
+    img_url = img_info[0]
     comic_name = os.path.basename(img_url)
-    pathlib.Path(COMIC_DIRECTORY_PATH).mkdir(parents=True, exist_ok=True)
-    photo_path = Path() / COMIC_DIRECTORY_PATH / comic_name
+    photo_path = Path() / comic_name
     img_content = response_img.content
     with open(photo_path, 'wb') as file:
         file.write(img_content)
@@ -108,11 +99,11 @@ def main():
         vk_server_url = get_upload_server(params)
         server_response = upload_comic_to_server(vk_server_url, photo_path)
         server_photo = save_comic_to_album(server_response, params)
-        comment = img_info.get('comment')
+        comment = img_info[1]
         post_comic(server_photo, comment, params, group_id)
     finally:
         os.remove(photo_path)
-        os.rmdir(COMIC_DIRECTORY_PATH)
+
 
 
 if __name__ == '__main__':
