@@ -23,9 +23,8 @@ def fetch_img_info(comic_number):
     return img_url, comment
 
 
-def save_image(img_info):
-    response_img = requests.get(img_info[0])
-    img_url = img_info[0]
+def save_image(img_url):
+    response_img = requests.get(img_url)
     comic_name = os.path.basename(img_url)
     photo_path = Path() / comic_name
     img_content = response_img.content
@@ -34,8 +33,13 @@ def save_image(img_info):
     return photo_path
 
 
-def get_upload_server(params):
+def get_upload_server(album_id, access_token, v):
     vk_url = 'https://api.vk.com/method/photos.getWallUploadServer'
+    params = {
+        'album_id': album_id,
+        'access_token': access_token,
+        'v': v
+    }
     response = requests.get(vk_url, params)
     vk_server_url = response.json().get('response').get('upload_url')
     return vk_server_url
@@ -47,37 +51,41 @@ def upload_comic_to_server(vk_server_url, path_photo):
         response = requests.post(vk_server_url, files=files)
     response.raise_for_status()
     server_response = response.json()
-    return server_response
-
-
-def save_comic_to_album(server_response, params):
     hash_number = server_response.get('hash')
     photo = server_response.get('photo')
     server = server_response.get('server')
+    return hash_number, photo, server
+
+
+def save_comic_to_album(hash_number, photo, server, album_id, access_token, v):
     server_params = {
         'hash': hash_number,
         'photo': photo,
         'server': server,
+        'album_id': album_id,
+        'access_token': access_token,
+        'v': v
     }
-    params.update(server_params)
     vk_url_upload = 'https://api.vk.com/method/photos.saveWallPhoto'
-    upload_response = requests.post(vk_url_upload, params=params)
+    upload_response = requests.post(vk_url_upload, params=server_params)
     upload_response.raise_for_status()
     server_photo = upload_response.json()
-    return server_photo
-
-
-def post_comic(server_photo, comment, params, group_id):
-    url_post = 'https://api.vk.com/method/wall.post'
     photo_id = server_photo.get('response')[0].get('id')
     owner_id = server_photo.get('response')[0].get('owner_id')
+    return photo_id, owner_id
+
+
+def post_comic(photo_id, owner_id, comment, album_id, access_token, v, group_id):
+    url_post = 'https://api.vk.com/method/wall.post'
     photo_params = {
         'attachments': f'photo{owner_id}_{photo_id}',
         'from_group': group_id,
         'message': comment,
-        'owner_id': group_id
+        'owner_id': group_id,
+        'album_id': album_id,
+        'access_token': access_token,
+        'v': v
     }
-    photo_params.update(params)
     upload_response = requests.post(url_post, params=photo_params)
     upload_response.raise_for_status()
 
@@ -87,23 +95,19 @@ def main():
     env.read_env()
     access_token = env.str('VK_ACCESS_TOKEN')
     group_id = -env.int('GROUP_ID')
-    params = {
-        'album_id': -14,
-        'access_token': access_token,
-        'v': 5.131
-    }
+    album_id = -14
+    v = 5.131
     comic_number = get_random_comic_number()
     img_info = fetch_img_info(comic_number)
     try:
-        photo_path = save_image(img_info)
-        vk_server_url = get_upload_server(params)
+        photo_path = save_image(img_info[0])
+        vk_server_url = get_upload_server(album_id, access_token, v)
         server_response = upload_comic_to_server(vk_server_url, photo_path)
-        server_photo = save_comic_to_album(server_response, params)
+        server_photo = save_comic_to_album(server_response[0], server_response[1], server_response[2], album_id, access_token, v)
         comment = img_info[1]
-        post_comic(server_photo, comment, params, group_id)
+        post_comic(server_photo[0], server_photo[1], comment, album_id, access_token, v, group_id)
     finally:
         os.remove(photo_path)
-
 
 
 if __name__ == '__main__':
