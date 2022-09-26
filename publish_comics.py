@@ -99,13 +99,15 @@ def main():
     v = 5.131
     comic_number = get_random_comic_number()
     img_info = fetch_img_info(comic_number)
+    img_url, comment = img_info
     try:
-        photo_path = save_image(img_info[0])
+        photo_path = save_image(img_url)
         vk_server_url = get_upload_server(album_id, access_token, v)
         server_response = upload_comic_to_server(vk_server_url, photo_path)
-        server_photo = save_comic_to_album(server_response[0], server_response[1], server_response[2], album_id, access_token, v)
-        comment = img_info[1]
-        post_comic(server_photo[0], server_photo[1], comment, album_id, access_token, v, group_id)
+        hash_number, photo, server = server_response
+        server_photo = save_comic_to_album(hash_number, photo, server, album_id, access_token, v)
+        photo_id, owner_id = server_photo
+        post_comic(photo_id, owner_id, comment, album_id, access_token, v, group_id)
     finally:
         os.remove(photo_path)
 
