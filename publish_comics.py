@@ -103,14 +103,16 @@ def main():
     }
     comic_number = get_random_comic_number()
     img_info = fetch_img_info(comic_number)
-    photo_path = save_image(img_info)
-    vk_server_url = get_upload_server(params)
-    server_response = upload_comic_to_server(vk_server_url, photo_path)
-    server_photo = save_comic_to_album(server_response, params)
-    comment = img_info.get('comment')
-    post_comic(server_photo, comment, params, group_id)
-    os.remove(photo_path)
-    os.rmdir(COMIC_DIRECTORY_PATH)
+    try:
+        photo_path = save_image(img_info)
+        vk_server_url = get_upload_server(params)
+        server_response = upload_comic_to_server(vk_server_url, photo_path)
+        server_photo = save_comic_to_album(server_response, params)
+        comment = img_info.get('comment')
+        post_comic(server_photo, comment, params, group_id)
+    finally:
+        os.remove(photo_path)
+        os.rmdir(COMIC_DIRECTORY_PATH)
 
 
 if __name__ == '__main__':
