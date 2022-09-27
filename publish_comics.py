@@ -33,10 +33,9 @@ def save_image(img_url):
     return photo_path
 
 
-def get_upload_server(album_id, access_token, v):
+def get_upload_server(access_token, v):
     vk_url = 'https://api.vk.com/method/photos.getWallUploadServer'
     params = {
-        'album_id': album_id,
         'access_token': access_token,
         'v': v
     }
@@ -57,12 +56,11 @@ def upload_comic_to_server(vk_server_url, path_photo):
     return hash_number, photo, server
 
 
-def save_comic_to_album(hash_number, photo, server, album_id, access_token, v):
+def save_comic_to_album(hash_number, photo, server, access_token, v):
     server_params = {
         'hash': hash_number,
         'photo': photo,
         'server': server,
-        'album_id': album_id,
         'access_token': access_token,
         'v': v
     }
@@ -75,14 +73,13 @@ def save_comic_to_album(hash_number, photo, server, album_id, access_token, v):
     return photo_id, owner_id
 
 
-def post_comic(photo_id, owner_id, comment, album_id, access_token, v, group_id):
+def post_comic(photo_id, owner_id, comment, access_token, v, group_id):
     url_post = 'https://api.vk.com/method/wall.post'
     photo_params = {
         'attachments': f'photo{owner_id}_{photo_id}',
         'from_group': group_id,
         'message': comment,
         'owner_id': group_id,
-        'album_id': album_id,
         'access_token': access_token,
         'v': v
     }
@@ -95,19 +92,18 @@ def main():
     env.read_env()
     access_token = env.str('VK_ACCESS_TOKEN')
     group_id = -env.int('GROUP_ID')
-    album_id = -14
     v = 5.131
     comic_number = get_random_comic_number()
     img_info = fetch_img_info(comic_number)
     img_url, comment = img_info
     try:
         photo_path = save_image(img_url)
-        vk_server_url = get_upload_server(album_id, access_token, v)
+        vk_server_url = get_upload_server(access_token, v)
         server_response = upload_comic_to_server(vk_server_url, photo_path)
         hash_number, photo, server = server_response
-        server_photo = save_comic_to_album(hash_number, photo, server, album_id, access_token, v)
+        server_photo = save_comic_to_album(hash_number, photo, server, access_token, v)
         photo_id, owner_id = server_photo
-        post_comic(photo_id, owner_id, comment, album_id, access_token, v, group_id)
+        post_comic(photo_id, owner_id, comment, access_token, v, group_id)
     finally:
         os.remove(photo_path)
 
